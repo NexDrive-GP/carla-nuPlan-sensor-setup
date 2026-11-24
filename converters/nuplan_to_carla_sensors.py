@@ -1,39 +1,37 @@
 #!/usr/bin/env python3
 """
-Convert a nuPlan / NAVSIM sensor-calibration YAML (the "veh-35" style dump) into a
-CARLA 0.9.16 sensor-config YAML that maps 1:1 onto blueprint attributes + transforms.
+nuPlan / NAVSIM rig  ->  CARLA 0.9.16 sensor-config YAML.
 
-Usage
------
-    python nuplan_to_carla_sensors.py calib.yaml -o carla_sensors.yaml
-    python nuplan_to_carla_sensors.py calib.yaml --lidar per-id --scale 0.5
-    python nuplan_to_carla_sensors.py --help
+OUTPUT = 8 RGB cameras + EXACTLY ONE merged LiDAR (LIDAR_MERGED).  The 5 physical LiDARs are never emitted
+(one ray-caster instead of five = ~5x cheaper).
 
-Output schema
--------------
-    carla_version: 0.9.16
-    vehicle: {blueprint: vehicle.chrysler.pacifica}
-    sensors:
-      - id: CAM_F0
-        type: sensor.camera.rgb
-        transform: {x: .., y: .., z: .., roll: .., pitch: .., yaw: ..}   # relative to the ego vehicle, CARLA frame
-        attributes: {image_size_x: .., image_size_y: .., fov: .., sensor_tick: 0.0}
-      - id: LIDAR_MERGED
-        type: sensor.lidar.ray_cast
-        transform: {...}
-        attributes: {channels: .., range: .., ...}
+Pipeline
+--------
+    python extract_rig.py   --logs L --blobs B --lidar --vehicle veh-35 --out rig.yaml
+    python fit_lidar_rig.py --logs L --blobs B --vehicle veh-35 --out lidar_fit.yaml
+    python nuplan_to_carla_sensors.py rig.yaml --vehicle veh-35 --lidar-fit lidar_fit.yaml -o carla_sensors.yaml
 
-Coordinate conventions handled here
------------------------------------
-nuPlan ego/lidar : right-handed, x forward, y LEFT,  z up.   p_ego = R @ p_sensor + t
+How the single merged LiDAR is built
+------------------------------------
+* position : fitted mounting point of the TOP LiDAR (fit_lidar_rig.py), or --lidar-mount X Y Z (nuPlan ego frame)
+* channels / vertical FOV / horizontal FOV : paper Table VII top Pandar40P: 40 ch, [-25, +15] deg, 360 deg
+* points_per_second : summed measured points/frame of all 5 LiDARs x rotation_frequency, capped (--lidar-pps-cap)
+* range : 100 m by default (paper: 200 m; range is the main ray-cast cost)
+CARLA spaces channels uniformly; the real Pandar40P does not. Bumper / A-pillar near-field coverage is lost.
+
+Coordinate conventions
+----------------------
+nuPlan ego/lidar : right-handed, x forward, y LEFT, z up.  p_ego = R @ p_sensor + t   (origin = REAR AXLE)
 nuPlan camera    : OpenCV, x right, y down, z forward.
-CARLA (Unreal)   : left-handed,  x forward, y RIGHT, z up. Rotation in degrees (roll/pitch/yaw),
-                   yaw > 0 = turn right, pitch > 0 = look up.
-CARLA camera     : looks along its local +x, local y = right, local z = up.
+CARLA (Unreal)   : left-handed, x forward, y RIGHT, z up. Angles in degrees, yaw > 0 = turn right, pitch > 0 = up.
+CARLA camera     : looks along local +x, local y = right, local z = up.
+cameras: R_carla = S @ R_ego @ M ;  lidar: R_carla = S @ R @ S ;  t_carla = S @ t + offset ;  S = diag(1,-1,1)
 
-Conversion:  B = R_sensor2lidar @ M  (columns = CARLA-cam fwd/right/up in the right-handed ego frame)
-             cameras: R_carla = S @ B;  lidar: R_carla = S @ R @ S;  t_carla = S @ t,  S = diag(1, -1, 1)
-             (roll, pitch, yaw) extracted with CARLA's own Transform.get_matrix() convention.
+Loading the result in CARLA (keyword arguments, the YAML order is roll/pitch/yaw, carla.Rotation wants pitch/yaw/roll):
+    tf = carla.Transform(carla.Location(x=t['x'], y=t['y'], z=t['z']),
+                         carla.Rotation(pitch=t['pitch'], yaw=t['yaw'], roll=t['roll']))
+Run the world synchronous with fixed_delta_seconds = simulation.fixed_delta_seconds from the output file
+(LiDAR rotation_frequency must equal 1/fixed_delta_seconds, otherwise you get partial sweeps).
 """
 import argparse
 import math
@@ -48,6 +46,13 @@ M_CARLACAM_TO_CV = np.array([[0.0, 1.0, 0.0],
                              [0.0, 0.0, -1.0],
                              [1.0, 0.0, 0.0]])
 S_FLIP_Y = np.diag([1.0, -1.0, 1.0])
+
+# nuPlan paper Table VII, top Pandar40P
+TOP_CHANNELS, TOP_LOWER, TOP_UPPER = 40, -25.0, 15.0
+PAPER_PPS_TOTAL = 3 * 720_000 + 2 * 360_000          # 3x Pandar40P + 2x Pandar20 (only used if nothing was measured)
+PAPER_HZ = 20.0
+# rear axle -> vehicle centre of the nuPlan Pacifica (nuplan-devkit get_pacifica_parameters; please verify)
+REAR_AXLE_TO_CENTER = 1.461
 
 
 # --------------------------------------------------------------------------- math helpers
@@ -101,16 +106,17 @@ yaml.SafeDumper.add_representer(
     Flow, lambda d, data: d.represent_mapping("tag:yaml.org,2002:map", data, flow_style=True))
 
 
-# --------------------------------------------------------------------------- conversion
+# --------------------------------------------------------------------------- shared context
 class Ctx:
     """Conversion options shared by all sensors."""
 
     def __init__(self, args, ground_z):
         self.offset = np.array(args.origin_offset, float)  # CARLA frame (x fwd, y right, z up)
-        if not args.no_ground_offset and ground_z is not None:
-            # nuPlan ego origin sits ~|ground_z| above the road; CARLA vehicle origin is at ground level.
+        if ground_z is not None:
+            # nuPlan ego origin sits |ground_z| above the road; the CARLA vehicle origin is at ground level.
             self.offset[2] += -float(ground_z)
         self.notes = []
+        self.pp_offsets = []
 
 
 def ego_pose_to_carla(R_ego, t_ego, ctx, left_handed_local=False):
@@ -124,58 +130,72 @@ def ego_pose_to_carla(R_ego, t_ego, ctx, left_handed_local=False):
 
 def transform_dict(Rc, tc):
     roll, pitch, yaw = matrix_to_rpy(Rc)
-    # self-check: reconstruct and compare
-    err = np.abs(carla_matrix(roll, pitch, yaw) - Rc).max()
+    err = np.abs(carla_matrix(roll, pitch, yaw) - Rc).max()  # self-check
     if err > 1e-6:
         raise RuntimeError(f"rotation round-trip error {err:.2e}")
     return Flow(x=rnd(tc[0]), y=rnd(tc[1]), z=rnd(tc[2]),
                 roll=rnd(wrap180(roll)), pitch=rnd(pitch), yaw=rnd(wrap180(yaw)))
 
 
-def convert_camera(name, cam, args, ctx):
+def get_lidar2ego(calib, ctx):
+    """-> (R, t). The extractor writes lidar2ego: None when the logs have none -> identity."""
+    l2e = calib.get("lidar2ego")
+    if not l2e:
+        ctx.notes.append("lidar2ego missing in the YAML: assuming LiDAR frame == ego frame.")
+        return np.eye(3), np.zeros(3)
+    return orthonormalize(l2e.get("R", np.eye(3))), np.array(l2e.get("t", [0, 0, 0]), float)
+
+
+# --------------------------------------------------------------------------- cameras
+def convert_camera(name, cam, args, ctx, l2e):
     W, H = cam["image_size_wh"]
-    K = np.array(cam["K"], float) if "K" in cam else None
-    fx = cam["intrinsics"]["fx"] if "intrinsics" in cam else K[0, 0]
-    fy = cam["intrinsics"]["fy"] if "intrinsics" in cam else K[1, 1]
-    cx = cam["intrinsics"]["cx"] if "intrinsics" in cam else K[0, 2]
-    cy = cam["intrinsics"]["cy"] if "intrinsics" in cam else K[1, 2]
+    if "intrinsics" in cam:
+        fx, fy = cam["intrinsics"]["fx"], cam["intrinsics"]["fy"]
+        cx, cy = cam["intrinsics"]["cx"], cam["intrinsics"]["cy"]
+    else:
+        K = np.array(cam["K"], float)
+        fx, fy, cx, cy = K[0, 0], K[1, 1], K[0, 2], K[1, 2]
 
     # --- FOV (CARLA fov is the HORIZONTAL fov; vertical follows from the aspect ratio)
-    if args.fov_source == "distortion_aware" and "fov_deg" in cam:
-        fov = cam["fov_deg"]["hfov_distortion_aware_deg"]
-    else:
+    fov = None
+    if args.fov_source == "distortion_aware":
+        fov = (cam.get("fov_deg") or {}).get("hfov_distortion_aware_deg")
+        if fov is None:
+            ctx.notes.append(f"{name}: distortion-aware FOV not available in the YAML, used pinhole FOV.")
+    if fov is None:
         fov = math.degrees(2.0 * math.atan(W / (2.0 * fx)))
     if abs(fx - fy) / fx > 1e-3:
         ctx.notes.append(f"{name}: fx != fy; CARLA assumes square pixels (vertical FOV will differ).")
 
-    # --- pose
-    R = orthonormalize(cam["sensor2lidar"]["R"])
-    t = cam["sensor2lidar"]["t"]
-    R_ego = R @ M_CARLACAM_TO_CV
-    Rc, tc = ego_pose_to_carla(R_ego, t, ctx, left_handed_local=True)
+    # --- pose: sensor -> lidar -> ego (identity for NAVSIM, composed anyway so a non-identity lidar2ego stays correct)
+    Rle, tle = l2e
+    R = Rle @ orthonormalize(cam["sensor2lidar"]["R"])
+    t = Rle @ np.array(cam["sensor2lidar"]["t"], float) + tle
+    Rc, tc = ego_pose_to_carla(R @ M_CARLACAM_TO_CV, t, ctx, left_handed_local=True)
 
     # --- principal point: CARLA's principal point is always the image centre.
     dx_right = (W / 2.0 - cx) / fx
     dz_up = (cy - H / 2.0) / fy
     if abs(cx - W / 2.0) > 0.5 or abs(cy - H / 2.0) > 0.5:
         if args.compensate_principal_point:
-            R_local = carla_matrix(0.0, math.degrees(math.atan(dz_up)), math.degrees(math.atan(dx_right)))
-            Rc = Rc @ R_local
+            Rc = Rc @ carla_matrix(0.0, math.degrees(math.atan(dz_up)), math.degrees(math.atan(dx_right)))
         else:
-            ctx.notes.append(
-                f"{name}: principal point offset ({cx - W / 2:+.1f}, {cy - H / 2:+.1f}) px cannot be modelled by "
-                f"CARLA; ignored (use --compensate-principal-point to approximate it by a small rotation).")
+            ctx.pp_offsets.append((name, cx - W / 2.0, cy - H / 2.0))
 
     attrs = {
         "image_size_x": int(round(W * args.scale)),
         "image_size_y": int(round(H * args.scale)),
         "fov": rnd(fov, 4),
-        "sensor_tick": 0.0,
+        "sensor_tick": rnd(1.0 / args.camera_hz, 4),
     }
-    return {"id": name, "type": "sensor.camera.rgb",
-            "transform": transform_dict(Rc, tc), "attributes": attrs}
+    if args.lens_k is not None:       # optional manual passthrough, see the notes: NOT derived from OpenCV k1..k3
+        attrs["lens_k"] = args.lens_k
+    if args.lens_kcube is not None:
+        attrs["lens_kcube"] = args.lens_kcube
+    return {"id": name, "type": "sensor.camera.rgb", "transform": transform_dict(Rc, tc), "attributes": attrs}
 
 
+# --------------------------------------------------------------------------- the ONE merged LiDAR
 def _lidar_attrs(channels, rng, pps, hz, upper, lower, hfov):
     return {
         "channels": int(channels),
@@ -194,58 +214,77 @@ def _lidar_attrs(channels, rng, pps, hz, upper, lower, hfov):
     }
 
 
-def convert_lidars(calib, args, ctx):
-    lm = calib.get("lidar_merged")
-    if not lm:
-        ctx.notes.append("No lidar_merged section found; no LiDAR emitted.")
-        return []
-    l2e = calib.get("lidar2ego", {})
-    R_l2e = np.array(l2e.get("R", np.eye(3)), float)
-    t_l2e = np.array(l2e.get("t", [0, 0, 0]), float)
-    Rc, tc = ego_pose_to_carla(R_l2e, t_l2e, ctx)
-    per = lm.get("per_lidar_id", {})
+def pick_top_lidar(fit):
+    """-> (id, entry) of the top LiDAR in a lidar_fit.yaml: the roles written by the fit, else highest central 40-ch unit."""
+    L = (fit or {}).get("lidars", {})
+    tid = (fit or {}).get("top_lidar_id")
+    if tid is not None and str(tid) in L:
+        return str(tid), L[str(tid)]
+    cand = [(v["mount_xyz_ego_m"][2], k, v) for k, v in L.items()
+            if v.get("n_rings", 0) >= 30 and abs(v["mount_xyz_ego_m"][1]) < 0.5]
+    if not cand:
+        return None, None
+    _, k, v = max(cand, key=lambda c: c[0])
+    return str(k), v
+
+
+def resolve_pps(args, fit, lm, hz, ctx):
+    """Rays per second of the single merged sensor."""
+    if args.lidar_pps:
+        return float(args.lidar_pps), "--lidar-pps"
+    ppf, src = None, None
+    L = (fit or {}).get("lidars", {})
+    if fit and fit.get("total_points_per_frame_mean"):
+        ppf, src = float(fit["total_points_per_frame_mean"]), "fit (sum of 5 LiDARs, measured)"
+    elif L:
+        ppf, src = sum(v.get("points_per_frame_mean", 0.0) for v in L.values()), "fit (sum of 5 LiDARs, measured)"
+    elif isinstance(lm, dict) and lm.get("points_per_frame"):
+        ppf, src = float(lm["points_per_frame"]["median"]), "extractor lidar_merged median"
+    if not ppf:
+        ppf, src = PAPER_PPS_TOTAL / PAPER_HZ, "paper Table VII sum"
+    pps = ppf * hz
+    if pps > args.lidar_pps_cap:
+        ctx.notes.append(f"LIDAR_MERGED points_per_second capped {pps:,.0f} -> {args.lidar_pps_cap:,.0f} "
+                         f"(--lidar-pps-cap) to keep the ray-casting cheap.")
+        pps = float(args.lidar_pps_cap)
+    return pps, src
+
+
+def convert_lidar_merged(args, ctx, fit, lm):
+    """ONE sensor.lidar.ray_cast named LIDAR_MERGED."""
     hz = args.lidar_hz
-
-    def keyf(d, k):  # YAML keys like p0.5 are strings
-        return d[k]
-
-    if args.lidar == "merged":
-        ppf = lm["points_per_frame"]["median"]
-        chans = max(v["rings"]["distinct_ring_ids_overall"] for v in per.values())
-        lower = min(keyf(v["elevation_from_ego_origin_deg"], "p0.5") for v in per.values())
-        upper = max(keyf(v["elevation_from_ego_origin_deg"], "p99.5") for v in per.values())
-        rng = args.lidar_range or math.ceil(max(v["xy_range_m"]["p99"] for v in per.values()) / 5.0) * 5.0
-        ctx.notes.append(
-            "LIDAR_MERGED: the 5 physical LiDARs are fused into one 360 deg ray_cast sensor at the lidar2ego pose; "
-            "channels = max rings (40), vertical FOV = widest p0.5..p99.5 elevation measured from the ego origin.")
-        return [{"id": "LIDAR_MERGED", "type": "sensor.lidar.ray_cast",
-                 "transform": transform_dict(Rc, tc),
-                 "attributes": _lidar_attrs(chans, rng, ppf * hz, hz, upper, lower, 360.0)}]
-
-    # per-id
-    out = []
-    for lid, v in sorted(per.items(), key=lambda kv: int(kv[0])):
-        arcs = v["azimuth_coverage"].get("empty_arcs_deg", [])
-        if arcs:
-            a, b = arcs[0]
-            width = (b - a) % 360.0
-            hfov = 360.0 - width
-            covered_center_ego = wrap180(a + width / 2.0 + 180.0)   # right-handed, ccw+
-            yaw_extra = -covered_center_ego                           # CARLA: y flipped, yaw cw+
-        else:
-            hfov, yaw_extra = 360.0, 0.0
-        Rl = Rc @ carla_matrix(0.0, 0.0, yaw_extra)
-        el = v["elevation_from_ego_origin_deg"]
-        rng = args.lidar_range or math.ceil(v["xy_range_m"]["p99"] / 5.0) * 5.0
-        out.append({"id": f"LIDAR_{lid}", "type": "sensor.lidar.ray_cast",
-                    "transform": transform_dict(Rl, tc),
-                    "attributes": _lidar_attrs(v["rings"]["distinct_ring_ids_overall"], rng,
-                                               v["points_per_frame"]["median"] * hz, hz,
-                                               el["p99.5"], el["p0.5"], hfov)})
+    pos, src, top_id = None, None, None
+    if args.lidar_mount:
+        pos, src = list(args.lidar_mount), "--lidar-mount"
+    else:
+        top_id, top = pick_top_lidar(fit)
+        if top is not None:
+            pos, src = top["mount_xyz_ego_m"], f"fitted top LiDAR (lidar_id {top_id})"
+            q = top.get("quality", {})
+            if q.get("height_well_determined") is False:
+                ctx.notes.append("[CHECK] the fit says the top LiDAR height is NOT well determined "
+                                 "(z_profile_ratio <= 2): verify the z of LIDAR_MERGED by hand.")
+            pc = top.get("paper_check", {})
+            if pc.get("consistent_with_paper") is False:
+                ctx.notes.append(f"[CHECK] fitted elevation range {top.get('elevation_min_deg')}.."
+                                 f"{top.get('elevation_max_deg')} deg is not consistent with the paper "
+                                 f"({pc.get('paper_fov_deg')}): the fit or the lidar_id selection may be wrong.")
+            if q.get("level_assumption_ok") is False:
+                ctx.notes.append(f"[CHECK] top LiDAR looks tilted ({q.get('tilt_amplitude_deg')} deg): the fit assumed a "
+                                 "level sensor, apex/elevations may be biased.")
+    if pos is None:
+        sys.exit("No LiDAR mounting position available. Run fit_lidar_rig.py and pass --lidar-fit lidar_fit.yaml, "
+                 "or pass --lidar-mount X Y Z (nuPlan ego frame, metres), or use --no-lidar. "
+                 "(Refusing to place the LiDAR at the ego origin: it would sit inside the car body.)")
+    pps, pps_src = resolve_pps(args, fit, lm, hz, ctx)
+    Rc, tc = ego_pose_to_carla(np.eye(3), pos, ctx)   # fit points are already in the ego frame; sensor assumed level
     ctx.notes.append(
-        "per-id LiDARs: logs contain NO per-sensor mounting poses, so all are placed at the lidar2ego origin and "
-        "aimed at the centre of their observed azimuth coverage. Use 'merged' unless you know the real mounts.")
-    return out
+        f"LIDAR_MERGED: the 5 physical LiDARs are represented by ONE ray_cast sensor at the {src}; "
+        f"{TOP_CHANNELS} ch, [{TOP_LOWER:+.0f}, {TOP_UPPER:+.0f}] deg, 360 deg (paper Table VII top Pandar40P); "
+        f"points_per_second from {pps_src}. Bumper and A-pillar viewpoints / near-field blind spots are NOT modelled; "
+        "CARLA spaces channels uniformly (real Pandar40P: denser near the horizon); rays with no hit are dropped.")
+    return {"id": "LIDAR_MERGED", "type": "sensor.lidar.ray_cast", "transform": transform_dict(Rc, tc),
+            "attributes": _lidar_attrs(TOP_CHANNELS, args.lidar_range, pps, hz, TOP_UPPER, TOP_LOWER, 360.0)}
 
 
 # --------------------------------------------------------------------------- main
@@ -258,60 +297,119 @@ def select_calibration(doc, vehicle, index):
     calibs = vehicles[vehicle]["calibrations"]
     if index >= len(calibs):
         sys.exit(f"calibration index {index} out of range (vehicle has {len(calibs)})")
-    return vehicle, calibs[index]
+    return vehicle, calibs[index], vehicles[vehicle]
 
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("input", type=Path, help="nuPlan/NAVSIM calibration YAML")
+    ap.add_argument("input", type=Path, help="rig YAML written by extract_rig.py")
     ap.add_argument("-o", "--output", type=Path, default=Path("carla_sensors.yaml"))
     ap.add_argument("--vehicle", help="vehicle key (default: first, e.g. veh-35)")
     ap.add_argument("--calibration", type=int, default=0, help="index in the vehicle's calibrations list")
-    ap.add_argument("--cameras", nargs="*", help="only these cameras (default: all)")
-    ap.add_argument("--lidar", choices=["merged", "per-id", "none"], default="merged")
-    ap.add_argument("--lidar-hz", type=float, default=10.0, help="LiDAR rotation frequency (nuPlan: 10 Hz)")
-    ap.add_argument("--lidar-range", type=float, help="override LiDAR range in metres")
+    ap.add_argument("--cameras", nargs="*", help="only these cameras (default: all 8)")
+    # --- LiDAR (always ONE merged sensor)
+    ap.add_argument("--lidar-fit", type=Path, help="lidar_fit.yaml from fit_lidar_rig.py (position + point budget)")
+    ap.add_argument("--lidar-mount", nargs=3, type=float, metavar=("X", "Y", "Z"),
+                    help="explicit LiDAR position in the nuPlan ego frame (x fwd, y LEFT, z up, metres); overrides the fit")
+    ap.add_argument("--no-lidar", action="store_true", help="cameras only")
+    ap.add_argument("--lidar-hz", type=float, default=20.0,
+                    help="rotation frequency = 1/fixed_delta_seconds (nuPlan LiDARs: 20 Hz; 10 halves the per-tick cost)")
+    ap.add_argument("--lidar-range", type=float, default=100.0, help="metres (paper 200; range drives the cost)")
+    ap.add_argument("--lidar-pps", type=float, help="override points_per_second")
+    ap.add_argument("--lidar-pps-cap", type=float, default=1_000_000.0, help="upper bound for points_per_second")
+    # --- cameras
+    ap.add_argument("--camera-hz", type=float, default=10.0, help="camera rate (nuPlan: 10 Hz) -> sensor_tick = 1/hz")
     ap.add_argument("--scale", type=float, default=1.0, help="image size scale (FOV unchanged), e.g. 0.5")
     ap.add_argument("--fov-source", choices=["pinhole", "distortion_aware"], default="pinhole")
-    ap.add_argument("--compensate-principal-point", action="store_true")
-    ap.add_argument("--origin-offset", nargs=3, type=float, default=[0.0, 0.0, 0.0], metavar=("X", "Y", "Z"),
-                    help="extra shift in the CARLA vehicle frame (x fwd, y right, z up), e.g. rear-axle -> actor origin")
+    ap.add_argument("--compensate-principal-point", action="store_true",
+                    help="approximate the principal-point offset by a small camera rotation")
+    ap.add_argument("--lens-k", type=float, help="CARLA lens_k for every camera (manual, no OpenCV mapping is derived)")
+    ap.add_argument("--lens-kcube", type=float, help="CARLA lens_kcube for every camera (manual)")
+    # --- frame
+    ap.add_argument("--origin-offset", nargs=3, type=float, default=[-REAR_AXLE_TO_CENTER, 0.0, 0.0],
+                    metavar=("X", "Y", "Z"),
+                    help="shift ADDED to every sensor in the CARLA vehicle frame (x fwd, y right, z up). nuPlan origin is "
+                         "the rear axle, CARLA's is the vehicle centre ~1.461 m AHEAD of it, so the shift is NEGATIVE "
+                         "(default -1.461 0 0). Pass 0 0 0 to disable.")
+    ap.add_argument("--ground-z", type=float,
+                    help="ego-frame z of the road (default: fit ground_z_m, else extractor ground_z_estimate_m)")
     ap.add_argument("--no-ground-offset", action="store_true",
-                    help="do not raise sensors by -ground_z_estimate_m (nuPlan ego origin is above the road)")
+                    help="do not raise sensors so that heights are above the road")
     ap.add_argument("--vehicle-blueprint", default="vehicle.chrysler.pacifica")
     args = ap.parse_args()
 
     doc = yaml.safe_load(args.input.read_text())
-    vehicle, calib = select_calibration(doc, args.vehicle, args.calibration)
-    ground_z = calib.get("lidar_merged", {}).get("ground_z_estimate_m")
+    vehicle, calib, vdata = select_calibration(doc, args.vehicle, args.calibration)
+
+    # extract_rig.py writes lidar_merged at VEHICLE level (sibling of `calibrations`); accept both layouts
+    lm = calib.get("lidar_merged") or vdata.get("lidar_merged")
+    if isinstance(lm, str):
+        print(f"[warn] lidar_merged in the YAML is a message, not data: {lm}")
+        lm = None
+    fit = None
+    if args.lidar_fit:
+        fit = yaml.safe_load(args.lidar_fit.read_text()) or {}
+        fv = fit.get("vehicle")
+        if fv and vehicle and str(fv).lower().replace("-", "") != str(vehicle).lower().replace("-", ""):
+            print(f"[warn] lidar fit was made for {fv}, converting {vehicle}")
+
+    # ---- ground height: ONE source, no silent default
+    ground_z, gsrc = None, None
+    if not args.no_ground_offset:
+        if args.ground_z is not None:
+            ground_z, gsrc = args.ground_z, "--ground-z"
+        elif fit and fit.get("ground_z_m") is not None:
+            ground_z, gsrc = fit["ground_z_m"], "lidar fit ground_z_m"
+        elif isinstance(lm, dict) and lm.get("ground_z_estimate_m") is not None:
+            ground_z, gsrc = lm["ground_z_estimate_m"], "extractor ground_z_estimate_m"
+        else:
+            sys.exit("No ground height available (need --lidar-fit, an extractor run with --lidar, or --ground-z). "
+                     "Use --no-ground-offset to skip the road-level shift.")
     ctx = Ctx(args, ground_z)
+    l2e = get_lidar2ego(calib, ctx)
 
     sensors = []
     for name, cam in calib["cameras"].items():
         if args.cameras and name not in args.cameras:
             continue
-        sensors.append(convert_camera(name, cam, args, ctx))
-    if args.lidar != "none":
-        sensors += convert_lidars(calib, args, ctx)
+        sensors.append(convert_camera(name, cam, args, ctx, l2e))
+    if not args.no_lidar:
+        sensors.append(convert_lidar_merged(args, ctx, fit, lm))
 
-    if not args.no_ground_offset and ground_z is not None:
-        ctx.notes.append(f"z raised by {-ground_z:.3f} m (ground_z_estimate_m = {ground_z}) so heights are above road.")
-    if ctx.offset[0] == 0 and ctx.offset[1] == 0:
-        ctx.notes.append("nuPlan origin is the REAR AXLE; CARLA actor origin is near the vehicle centre. "
-                         "Pass --origin-offset X 0 0 (X = rear axle -> CARLA origin, metres, + forward) if needed.")
-    ctx.notes.append("Lens distortion is not exported: CARLA has no OpenCV k1,k2,p1,p2,k3 model (pinhole only).")
+    # ---- notes
+    if ctx.pp_offsets:
+        ctx.notes.append(
+            "principal point is not at the image centre (CARLA cannot model that, ignored; "
+            "--compensate-principal-point approximates it by a rotation): "
+            + ", ".join(f"{n} ({dx:+.0f},{dy:+.0f}) px" for n, dx, dy in ctx.pp_offsets))
+    if ground_z is not None:
+        ctx.notes.append(f"z raised by {-ground_z:.3f} m ({gsrc} = {ground_z}) so heights are above the road.")
+    ctx.notes.append(f"x/y/z shift in the CARLA frame: {ctx.offset.round(3).tolist()} "
+                     "(rear axle -> CARLA vehicle origin, plus road level). The CARLA Pacifica body differs slightly "
+                     "from the real car: check that the sensors sit on the body.")
+    ctx.notes.append(
+        "Lens distortion: the OpenCV k1,k2,p1,p2,k3 model is not exported. CARLA's RGB camera has lens_k / lens_kcube / "
+        "lens_x_size / lens_y_size / lens_circle_* (a different model, no verified mapping), settable via --lens-k / "
+        "--lens-kcube. The nominal k1 = -0.356 is strong barrel distortion: either undistort the dataset images before "
+        "comparing, or accept a pinhole mismatch towards the image borders.")
+
+    n_lidar = sum(1 for s in sensors if s["type"] == "sensor.lidar.ray_cast")
+    assert n_lidar <= 1, "internal error: more than one LiDAR in the output"
 
     out = {
         "carla_version": "0.9.16",
         "source": {"file": args.input.name, "vehicle": vehicle,
-                   "frame": "ego/vehicle-relative, CARLA left-handed (x fwd, y right, z up), degrees"},
+                   "lidar_fit": args.lidar_fit.name if args.lidar_fit else None,
+                   "frame": "vehicle-relative, CARLA left-handed (x fwd, y right, z up), degrees"},
+        "simulation": {"synchronous_mode": True, "fixed_delta_seconds": rnd(1.0 / args.lidar_hz, 6),
+                       "note": "LiDAR rotation_frequency == 1/fixed_delta_seconds; cameras use sensor_tick"},
         "vehicle": {"blueprint": args.vehicle_blueprint},
         "sensors": sensors,
         "notes": ctx.notes,
     }
     with open(args.output, "w") as f:
         yaml.safe_dump(out, f, sort_keys=False, default_flow_style=False, width=140)
-    print(f"wrote {args.output}  ({len(sensors)} sensors)")
+    print(f"wrote {args.output}  ({len(sensors) - n_lidar} cameras + {n_lidar} merged LiDAR)")
     for n in ctx.notes:
         print("  note:", n)
 
