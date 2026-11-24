@@ -1,0 +1,110 @@
+ground_z_m: -0.32500000000001306
+num_frames: 20
+top_lidar_id: '0'
+roles: {'0': top_center, '1': a_pillar_left, '2': a_pillar_right, '4': front_bumper, '3': rear_bumper}
+total_points_per_frame_mean: 93067.9
+lidars:
+  '0':
+    mount_xyz_ego_m: [1.398, -0.211, 1.656]
+    n_rings: 40
+    ring_elevation_deg: {0: -16.553, 1: -14.941, 2: -13.325, 3: -12.363, 4: -11.391, 5: -10.406, 6: -9.405, 7: -8.393, 8: -7.377, 9: -6.352, 10: -6.007, 11: -5.671, 12: -5.326, 13: -4.981, 14: -4.62, 15: -4.278,
+      16: -3.934, 17: -3.585, 18: -3.24, 19: -2.899, 20: -2.55, 21: -2.211, 22: -1.863, 23: -1.511, 24: -1.154, 25: -0.804, 26: -0.453, 27: -0.1, 28: 0.246, 29: 0.595, 30: 0.937, 31: 1.277, 32: 1.615, 33: 1.952,
+      34: 2.969, 35: 4.673, 36: 7.373, 37: 10.064, 38: 12.403, 39: 15.025}
+    elevation_min_deg: -16.553
+    elevation_max_deg: 15.025
+    azimuth: {hfov_deg: 360.0, center_deg_ego: 0.0}
+    points_per_frame_mean: 29643.8
+    quality: {cone_residual_m: 0.0531, ring_elevation_mad_deg: 0.1732, z_profile_ratio: 1.46, height_well_determined: true, tilt_amplitude_deg: 0.206, level_assumption_ok: true}
+    paper_check:
+      closest_paper_model: Pandar40P (top / A-pillar)
+      paper_fov_deg: [-25.0, 15.0]
+      max_edge_error_deg: 8.45
+      lower_edge_error_deg: 8.45
+      upper_edge_error_deg: 0.03
+      consistent_with_paper: false
+      upper_edge_under_observed: false
+    height_above_ground_m: 1.981
+    role: top_center
+  '1':
+    mount_xyz_ego_m: [2.609, 0.656, 1.017]
+    n_rings: 40
+    ring_elevation_deg: {0: -22.993, 1: -20.53, 2: -17.654, 3: -15.183, 4: -13.176, 5: -11.414, 6: -9.549, 7: -8.564, 8: -7.555, 9: -6.878, 10: -6.201, 11: -5.525, 12: -5.196, 13: -4.855, 14: -4.517, 15: -4.192,
+      16: -3.854, 17: -3.52, 18: -3.201, 19: -2.86, 20: -2.529, 21: -2.223, 22: -1.877, 23: -1.543, 24: -1.217, 25: -0.873, 26: -0.544, 27: -0.244, 28: 0.092, 29: 0.412, 30: 0.722, 31: 1.068, 32: 1.402,
+      33: 1.728, 34: 2.076, 35: 2.401, 36: 3.079, 37: 3.779, 38: 4.803, 39: 6.516}
+    elevation_min_deg: -22.993
+    elevation_max_deg: 6.516
+    azimuth: {hfov_deg: 278.0, center_deg_ego: 40.0}
+    points_per_frame_mean: 23336.9
+    quality: {cone_residual_m: 0.0667, ring_elevation_mad_deg: 0.247, z_profile_ratio: 1.37, height_well_determined: true, tilt_amplitude_deg: 0.212, level_assumption_ok: true}
+    paper_check:
+      closest_paper_model: Pandar40P (top / A-pillar)
+      paper_fov_deg: [-25.0, 15.0]
+      max_edge_error_deg: 8.48
+      lower_edge_error_deg: 2.01
+      upper_edge_error_deg: -8.48
+      consistent_with_paper: true
+      upper_edge_under_observed: true
+    height_above_ground_m: 1.342
+    role: a_pillar_left
+  '2':
+    mount_xyz_ego_m: [2.531, -0.727, 1.111]
+    n_rings: 40
+    ring_elevation_deg: {0: -24.21, 1: -21.583, 2: -18.516, 3: -15.868, 4: -13.716, 5: -11.841, 6: -9.902, 7: -8.919, 8: -7.931, 9: -7.279, 10: -6.624, 11: -5.96, 12: -5.629, 13: -5.299, 14: -4.969, 15: -4.637,
+      16: -4.31, 17: -3.97, 18: -3.636, 19: -3.298, 20: -2.962, 21: -2.619, 22: -2.285, 23: -1.936, 24: -1.604, 25: -1.271, 26: -0.934, 27: -0.596, 28: -0.268, 29: 0.068, 30: 0.405, 31: 0.736, 32: 1.07,
+      33: 1.409, 34: 1.743, 35: 2.077, 36: 2.772, 37: 3.438, 38: 4.446, 39: 6.147}
+    elevation_min_deg: -24.21
+    elevation_max_deg: 6.147
+    azimuth: {hfov_deg: 274.0, center_deg_ego: -43.0}
+    points_per_frame_mean: 23327.8
+    quality: {cone_residual_m: 0.0244, ring_elevation_mad_deg: 0.1753, z_profile_ratio: 2.8, height_well_determined: true, tilt_amplitude_deg: 0.175, level_assumption_ok: true}
+    paper_check:
+      closest_paper_model: Pandar40P (top / A-pillar)
+      paper_fov_deg: [-25.0, 15.0]
+      max_edge_error_deg: 8.85
+      lower_edge_error_deg: 0.79
+      upper_edge_error_deg: -8.85
+      consistent_with_paper: true
+      upper_edge_under_observed: true
+    height_above_ground_m: 1.436
+    role: a_pillar_right
+  '3':
+    mount_xyz_ego_m: [-0.539, -0.516, 0.68]
+    n_rings: 20
+    ring_elevation_deg: {0: -17.381, 1: -13.543, 2: -11.956, 3: -10.121, 4: -8.495, 5: -7.602, 6: -6.697, 7: -5.775, 8: -4.838, 9: -3.883, 10: -3.24, 11: -2.588, 12: -1.916, 13: -1.251, 14: -0.918, 15: -0.584,
+      16: 0.092, 17: 0.78, 18: 1.12, 19: 2.151}
+    elevation_min_deg: -17.381
+    elevation_max_deg: 2.151
+    azimuth: {hfov_deg: 161.0, center_deg_ego: 177.5}
+    points_per_frame_mean: 7983.0
+    quality: {cone_residual_m: 0.0335, ring_elevation_mad_deg: 0.2079, z_profile_ratio: 2.07, height_well_determined: true, tilt_amplitude_deg: 0.065, level_assumption_ok: true}
+    paper_check:
+      closest_paper_model: Pandar20PB (rear bumper)
+      paper_fov_deg: [-19.0, 3.0]
+      max_edge_error_deg: 1.62
+      lower_edge_error_deg: 1.62
+      upper_edge_error_deg: -0.85
+      consistent_with_paper: true
+      upper_edge_under_observed: false
+    height_above_ground_m: 1.005
+    role: rear_bumper
+  '4':
+    mount_xyz_ego_m: [0.633, -2.0, 0.162]
+    n_rings: 20
+    ring_elevation_deg: {0: -6.573, 1: -5.921, 2: -5.406, 3: -4.705, 4: -4.091, 5: -3.67, 6: -3.121, 7: -2.456, 8: -2.273, 9: -2.084, 10: -1.884, 11: -1.67, 12: -1.445, 13: -1.224, 14: -0.997, 15: -0.761,
+      16: -0.53, 17: -0.289, 18: -0.056, 19: 0.188}
+    elevation_min_deg: -6.573
+    elevation_max_deg: 0.188
+    azimuth: {hfov_deg: 164.0, center_deg_ego: 2.0}
+    points_per_frame_mean: 8776.4
+    quality: {cone_residual_m: 0.0402, ring_elevation_mad_deg: 0.2074, z_profile_ratio: 1.57, height_well_determined: true, tilt_amplitude_deg: 0.264, level_assumption_ok: true}
+    paper_check:
+      closest_paper_model: Pandar20PB (rear bumper)
+      paper_fov_deg: [-19.0, 3.0]
+      max_edge_error_deg: 12.43
+      lower_edge_error_deg: 12.43
+      upper_edge_error_deg: -2.81
+      consistent_with_paper: false
+      upper_edge_under_observed: false
+    height_above_ground_m: 0.487
+    role: front_bumper
+vehicle: veh-35

@@ -24,4 +24,4 @@ CAM_B0   1920x1080   1545.0      63.7/72.2      38.5/40.2   179.7   -0.2  -0.41 
   3         20        159 [[-104.0, 97.0]]                        -3.1..5.4      121.3
   4         20        163 [[84.0, -79.0]]                         -2.4..1.8       78.9
 
-wrote rig_veh-35.yaml  (1 vehicle(s))
+wrote extracted_configs/rig_veh-35.yaml  (1 vehicle(s))

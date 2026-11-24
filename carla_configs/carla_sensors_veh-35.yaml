@@ -1,0 +1,110 @@
+carla_version: 0.9.16
+source:
+  file: rig_veh-35.yaml
+  vehicle: veh-35
+  lidar_fit: lidar_fit_veh-35.yaml
+  frame: vehicle-relative, CARLA left-handed (x fwd, y right, z up), degrees
+simulation:
+  synchronous_mode: true
+  fixed_delta_seconds: 0.05
+  note: LiDAR rotation_frequency == 1/fixed_delta_seconds; cameras use sensor_tick
+vehicle:
+  blueprint: vehicle.chrysler.pacifica
+sensors:
+- id: CAM_F0
+  type: sensor.camera.rgb
+  transform: {x: 0.2091, y: 0.025875, z: 1.847623, roll: -0.502034, pitch: -1.449575, yaw: -0.164683}
+  attributes:
+    image_size_x: 1920
+    image_size_y: 1080
+    fov: 63.7103
+    sensor_tick: 0.1
+- id: CAM_L0
+  type: sensor.camera.rgb
+  transform: {x: 0.185354, y: -0.143369, z: 1.846469, roll: -0.792181, pitch: -0.544324, yaw: -55.174538}
+  attributes:
+    image_size_x: 1920
+    image_size_y: 1080
+    fov: 63.7103
+    sensor_tick: 0.1
+- id: CAM_L1
+  type: sensor.camera.rgb
+  transform: {x: -0.162168, y: -0.670911, z: 1.732884, roll: -0.702644, pitch: -2.044948, yaw: -112.191937}
+  attributes:
+    image_size_x: 1920
+    image_size_y: 1080
+    fov: 63.7103
+    sensor_tick: 0.1
+- id: CAM_L2
+  type: sensor.camera.rgb
+  transform: {x: -1.9461, y: -0.543391, z: 1.711885, roll: -0.109382, pitch: -1.098957, yaw: -140.948082}
+  attributes:
+    image_size_x: 1920
+    image_size_y: 1080
+    fov: 63.7103
+    sensor_tick: 0.1
+- id: CAM_R0
+  type: sensor.camera.rgb
+  transform: {x: 0.165168, y: 0.161517, z: 1.851269, roll: 0.643748, pitch: 0.395218, yaw: 55.458266}
+  attributes:
+    image_size_x: 1920
+    image_size_y: 1080
+    fov: 63.7103
+    sensor_tick: 0.1
+- id: CAM_R1
+  type: sensor.camera.rgb
+  transform: {x: -0.197338, y: 0.634051, z: 1.739303, roll: -0.136709, pitch: -1.447248, yaw: 111.964383}
+  attributes:
+    image_size_x: 1920
+    image_size_y: 1080
+    fov: 63.7103
+    sensor_tick: 0.1
+- id: CAM_R2
+  type: sensor.camera.rgb
+  transform: {x: -1.958623, y: 0.50467, z: 1.716058, roll: 0.866236, pitch: -0.93231, yaw: 141.308903}
+  attributes:
+    image_size_x: 1920
+    image_size_y: 1080
+    fov: 63.7103
+    sensor_tick: 0.1
+- id: CAM_B0
+  type: sensor.camera.rgb
+  transform: {x: -1.947641, y: 0.000596, z: 1.811321, roll: 0.410289, pitch: -0.193985, yaw: -179.72068}
+  attributes:
+    image_size_x: 1920
+    image_size_y: 1080
+    fov: 63.7103
+    sensor_tick: 0.1
+- id: LIDAR_MERGED
+  type: sensor.lidar.ray_cast
+  transform: {x: -0.063, y: 0.211, z: 1.981, roll: 0.0, pitch: 0.0, yaw: 0.0}
+  attributes:
+    channels: 40
+    range: 100.0
+    points_per_second: 1000000
+    rotation_frequency: 20.0
+    upper_fov: 15.0
+    lower_fov: -25.0
+    horizontal_fov: 360.0
+    atmosphere_attenuation_rate: 0.0
+    dropoff_general_rate: 0.0
+    dropoff_intensity_limit: 1.0
+    dropoff_zero_intensity: 0.0
+    noise_stddev: 0.0
+    sensor_tick: 0.0
+notes:
+- '[CHECK] fitted elevation range -16.553..15.025 deg is not consistent with the paper ([-25.0, 15.0]): the fit or the lidar_id selection may
+  be wrong.'
+- LIDAR_MERGED points_per_second capped 1,861,358 -> 1,000,000 (--lidar-pps-cap) to keep the ray-casting cheap.
+- 'LIDAR_MERGED: the 5 physical LiDARs are represented by ONE ray_cast sensor at the fitted top LiDAR (lidar_id 0); 40 ch, [-25, +15] deg, 360
+  deg (paper Table VII top Pandar40P); points_per_second from fit (sum of 5 LiDARs, measured). Bumper and A-pillar viewpoints / near-field blind
+  spots are NOT modelled; CARLA spaces channels uniformly (real Pandar40P: denser near the horizon); rays with no hit are dropped.'
+- 'principal point is not at the image centre (CARLA cannot model that, ignored; --compensate-principal-point approximates it by a rotation):
+  CAM_F0 (+0,+20) px, CAM_L0 (+0,+20) px, CAM_L1 (+0,+20) px, CAM_L2 (+0,+20) px, CAM_R0 (+0,+20) px, CAM_R1 (+0,+20) px, CAM_R2 (+0,+20) px,
+  CAM_B0 (+0,+20) px'
+- z raised by 0.325 m (lidar fit ground_z_m = -0.32500000000001306) so heights are above the road.
+- 'x/y/z shift in the CARLA frame: [-1.461, 0.0, 0.325] (rear axle -> CARLA vehicle origin, plus road level). The CARLA Pacifica body differs
+  slightly from the real car: check that the sensors sit on the body.'
+- 'Lens distortion: the OpenCV k1,k2,p1,p2,k3 model is not exported. CARLA''s RGB camera has lens_k / lens_kcube / lens_x_size / lens_y_size /
+  lens_circle_* (a different model, no verified mapping), settable via --lens-k / --lens-kcube. The nominal k1 = -0.356 is strong barrel distortion:
+  either undistort the dataset images before comparing, or accept a pinhole mismatch towards the image borders.'
