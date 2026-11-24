@@ -1,0 +1,299 @@
+meta:
+  logs_dir: /work/dataset/navsim_logs/test
+  vehicle_filter: veh-35
+  num_logs_loaded: 27
+  num_vehicles: 1
+  lidar_samples_per_vehicle: 20
+  conventions: {sensor2lidar: p_lidar = R @ p_sensor + t, camera_axes_assumed: 'OpenCV: x right, y down, z forward (validated by the CAM_F0 azimuth check)', distortion_assumed: 'OpenCV [k1, k2, p1, p2,
+      k3] on the RAW image', lidar_frame: 'x forward, y left, z up (assumed); equals the ego frame when lidar2ego.is_identity', fov: '*_pinhole ignores distortion; *_distortion_aware uses undistorted rays
+      of the raw-image border. Which one applies depends on whether the stored images are raw or undistorted (not recorded in the logs)', intrinsics_check: 'cameras sharing identical K + distortion, and
+      whether all 8 equal the nominal 1545/960/560 set; a vehicle with the nominal set on all cameras has no individual per-camera intrinsics in these logs', lidar_angles: 'elevation/azimuth are measured
+      from the ego origin, not from each sensor; per-sensor mounting poses are not in the logs', lidar_sampling: evenly spaced frames across the vehicle's logs; azimuth coverage uses accumulated 1-degree
+      bins with a relative occupancy threshold}
+vehicles:
+  veh-35:
+    num_logs: 27
+    calibrations:
+    - logs:
+      - {name: 2021.05.25.14.16.10_veh-35_00083_00485.pkl, num_frames: 804, map_location: us-nv-las-vegas-strip, median_frame_dt_s_assuming_us: 0.5001, within_log_max_abs_dev: 0.0}
+      - {name: 2021.05.25.14.16.10_veh-35_01100_01664.pkl, num_frames: 1128, map_location: us-nv-las-vegas-strip, median_frame_dt_s_assuming_us: 0.5001, within_log_max_abs_dev: 0.0}
+      - {name: 2021.05.25.14.16.10_veh-35_01690_02183.pkl, num_frames: 986, map_location: us-nv-las-vegas-strip, median_frame_dt_s_assuming_us: 0.5001, within_log_max_abs_dev: 0.0}
+      - {name: 2021.05.25.14.16.10_veh-35_02482_02649.pkl, num_frames: 334, map_location: us-nv-las-vegas-strip, median_frame_dt_s_assuming_us: 0.5001, within_log_max_abs_dev: 0.0}
+      - {name: 2021.05.25.14.16.10_veh-35_03373_03550.pkl, num_frames: 354, map_location: us-nv-las-vegas-strip, median_frame_dt_s_assuming_us: 0.5001, within_log_max_abs_dev: 0.0}
+      - {name: 2021.05.25.14.16.10_veh-35_04097_04328.pkl, num_frames: 462, map_location: us-nv-las-vegas-strip, median_frame_dt_s_assuming_us: 0.5001, within_log_max_abs_dev: 0.0}
+      - {name: 2021.05.25.17.54.41_veh-35_01654_01850.pkl, num_frames: 392, map_location: us-nv-las-vegas-strip, median_frame_dt_s_assuming_us: 0.5001, within_log_max_abs_dev: 0.0}
+      - {name: 2021.05.25.17.54.41_veh-35_01905_02121.pkl, num_frames: 432, map_location: us-nv-las-vegas-strip, median_frame_dt_s_assuming_us: 0.5001, within_log_max_abs_dev: 0.0}
+      - {name: 2021.05.25.17.54.41_veh-35_02723_02902.pkl, num_frames: 358, map_location: us-nv-las-vegas-strip, median_frame_dt_s_assuming_us: 0.5001, within_log_max_abs_dev: 0.0}
+      - {name: 2021.05.25.17.54.41_veh-35_04111_04288.pkl, num_frames: 354, map_location: us-nv-las-vegas-strip, median_frame_dt_s_assuming_us: 0.5001, within_log_max_abs_dev: 0.0}
+      - {name: 2021.05.25.17.54.41_veh-35_04967_05098.pkl, num_frames: 262, map_location: us-nv-las-vegas-strip, median_frame_dt_s_assuming_us: 0.5001, within_log_max_abs_dev: 0.0}
+      - {name: 2021.06.03.12.02.06_veh-35_00233_00609.pkl, num_frames: 747, map_location: us-nv-las-vegas-strip, median_frame_dt_s_assuming_us: 0.5001, within_log_max_abs_dev: 0.0}
+      - {name: 2021.06.03.12.02.06_veh-35_01100_01227.pkl, num_frames: 252, map_location: us-nv-las-vegas-strip, median_frame_dt_s_assuming_us: 0.5001, within_log_max_abs_dev: 0.0}
+      - {name: 2021.06.03.12.02.06_veh-35_03526_03712.pkl, num_frames: 372, map_location: us-nv-las-vegas-strip, median_frame_dt_s_assuming_us: 0.5001, within_log_max_abs_dev: 0.0}
+      - {name: 2021.06.03.13.55.17_veh-35_00073_00426.pkl, num_frames: 706, map_location: us-nv-las-vegas-strip, median_frame_dt_s_assuming_us: 0.5001, within_log_max_abs_dev: 0.0}
+      - {name: 2021.06.03.13.55.17_veh-35_00789_00999.pkl, num_frames: 418, map_location: us-nv-las-vegas-strip, median_frame_dt_s_assuming_us: 0.5001, within_log_max_abs_dev: 0.0}
+      - {name: 2021.06.03.13.55.17_veh-35_02419_02561.pkl, num_frames: 282, map_location: us-nv-las-vegas-strip, median_frame_dt_s_assuming_us: 0.5001, within_log_max_abs_dev: 0.0}
+      - {name: 2021.06.03.13.55.17_veh-35_02572_02855.pkl, num_frames: 565, map_location: us-nv-las-vegas-strip, median_frame_dt_s_assuming_us: 0.5001, within_log_max_abs_dev: 0.0}
+      - {name: 2021.06.03.13.55.17_veh-35_02866_03582.pkl, num_frames: 1430, map_location: us-nv-las-vegas-strip, median_frame_dt_s_assuming_us: 0.5001, within_log_max_abs_dev: 0.0}
+      - {name: 2021.06.03.17.06.58_veh-35_00712_00855.pkl, num_frames: 284, map_location: us-nv-las-vegas-strip, median_frame_dt_s_assuming_us: 0.5001, within_log_max_abs_dev: 0.0}
+      - {name: 2021.06.03.17.06.58_veh-35_02571_02742.pkl, num_frames: 341, map_location: us-nv-las-vegas-strip, median_frame_dt_s_assuming_us: 0.5001, within_log_max_abs_dev: 0.0}
+      - {name: 2021.06.03.17.06.58_veh-35_02943_03220.pkl, num_frames: 552, map_location: us-nv-las-vegas-strip, median_frame_dt_s_assuming_us: 0.5001, within_log_max_abs_dev: 0.0}
+      - {name: 2021.06.03.17.06.58_veh-35_03860_03992.pkl, num_frames: 263, map_location: us-nv-las-vegas-strip, median_frame_dt_s_assuming_us: 0.5001, within_log_max_abs_dev: 0.0}
+      - {name: 2021.06.03.18.47.39_veh-35_00123_00246.pkl, num_frames: 246, map_location: us-nv-las-vegas-strip, median_frame_dt_s_assuming_us: 0.5001, within_log_max_abs_dev: 0.0}
+      - {name: 2021.06.03.18.47.39_veh-35_00257_00492.pkl, num_frames: 470, map_location: us-nv-las-vegas-strip, median_frame_dt_s_assuming_us: 0.5001, within_log_max_abs_dev: 0.0}
+      - {name: 2021.06.03.18.47.39_veh-35_00503_00777.pkl, num_frames: 548, map_location: us-nv-las-vegas-strip, median_frame_dt_s_assuming_us: 0.5001, within_log_max_abs_dev: 0.0}
+      - {name: 2021.06.28.21.47.53_veh-35_00280_00424.pkl, num_frames: 288, map_location: us-nv-las-vegas-strip, median_frame_dt_s_assuming_us: 0.5001, within_log_max_abs_dev: 0.0}
+      lidar2ego:
+        R:
+        - [1.0, 0.0, 0.0]
+        - [0.0, 1.0, 0.0]
+        - [0.0, 0.0, 1.0]
+        t: [0.0, 0.0, 0.0]
+        is_identity: true
+        source_key: lidar2ego(4x4)
+      frame_note: 'lidar2ego is identity: LiDAR frame == ego frame, so sensor2lidar is also sensor2ego (not duplicated)'
+      intrinsics_check:
+        all_cameras_equal_nominal_1545_960_560_set: true
+        num_distinct_intrinsics_sets: 1
+        cameras_sharing_identical_intrinsics:
+        - [CAM_F0, CAM_L0, CAM_L1, CAM_L2, CAM_R0, CAM_R1, CAM_R2, CAM_B0]
+      camera_azimuth_coverage:
+        basis: principal-row edge azimuths in the lidar frame, parallax ignored
+        covered_deg: 360.0
+        uncovered_arcs_deg: []
+        pair_overlap_deg: {CAM_F0|CAM_L0: 17.2, CAM_F0|CAM_R0: 16.6, CAM_L0|CAM_L1: 15.2, CAM_L1|CAM_L2: 43.5, CAM_L1|CAM_B0: 4.8, CAM_L2|CAM_B0: 33.5, CAM_R0|CAM_R1: 15.7, CAM_R1|CAM_R2: 43.0, CAM_R1|CAM_B0: 4.0,
+          CAM_R2|CAM_B0: 33.3}
+      cameras:
+        CAM_F0:
+          image_size_wh: [1920, 1080]
+          image_size_source: image_file
+          intrinsics: {fx: 1545.0, fy: 1545.0, cx: 960.0, cy: 560.0}
+          principal_point_offset_px: [0.0, 20.0]
+          K:
+          - [1545.0, 0.0, 960.0]
+          - [0.0, 1545.0, 560.0]
+          - [0.0, 0.0, 1.0]
+          distortion: [-0.356123, 0.172545, -0.00213, 0.000464, -0.05231]
+          fov_deg: {hfov_pinhole_deg: 63.7103, vfov_pinhole_deg: 38.5252, hfov_distortion_aware_deg: 72.2484, vfov_distortion_aware_deg: 40.1854, max_angle_from_axis_deg: 42.0166, undistort_max_residual_px: 0.0}
+          sensor2lidar:
+            R:
+            - [0.003095805, -0.025270896, 0.999675846]
+            - [-0.999956845, -0.008834711, 0.002873342]
+            - [0.008759235, -0.999641601, -0.025297156]
+            t: [1.670100096, -0.025874953, 1.522623497]
+          optical_axis_in_lidar: {azimuth_deg: 0.1647, elevation_deg: -1.4496, roll_deg: 0.5019}
+          azimuth_left_edge_in_lidar_deg: 36.3462
+          azimuth_right_edge_in_lidar_deg: -35.9195
+        CAM_L0:
+          image_size_wh: [1920, 1080]
+          image_size_source: image_file
+          intrinsics: {fx: 1545.0, fy: 1545.0, cx: 960.0, cy: 560.0}
+          principal_point_offset_px: [0.0, 20.0]
+          K:
+          - [1545.0, 0.0, 960.0]
+          - [0.0, 1545.0, 560.0]
+          - [0.0, 0.0, 1.0]
+          distortion: [-0.356123, 0.172545, -0.00213, 0.000464, -0.05231]
+          fov_deg: {hfov_pinhole_deg: 63.7103, vfov_pinhole_deg: 38.5252, hfov_distortion_aware_deg: 72.2484, vfov_distortion_aware_deg: 40.1854, max_angle_from_axis_deg: 42.0166, undistort_max_residual_px: 0.0}
+          sensor2lidar:
+            R:
+            - [0.820892052, 0.00592469, 0.571052657]
+            - [-0.570916024, -0.015693418, 0.82085846]
+            - [0.0138251, -0.999859297, -0.009500101]
+            t: [1.64635422, 0.143369339, 1.521468646]
+          optical_axis_in_lidar: {azimuth_deg: 55.1745, elevation_deg: -0.5443, roll_deg: 0.7921}
+          azimuth_left_edge_in_lidar_deg: 91.3443
+          azimuth_right_edge_in_lidar_deg: 19.098
+        CAM_L1:
+          image_size_wh: [1920, 1080]
+          image_size_source: image_file
+          intrinsics: {fx: 1545.0, fy: 1545.0, cx: 960.0, cy: 560.0}
+          principal_point_offset_px: [0.0, 20.0]
+          K:
+          - [1545.0, 0.0, 960.0]
+          - [0.0, 1545.0, 560.0]
+          - [0.0, 0.0, 1.0]
+          distortion: [-0.356123, 0.172545, -0.00213, 0.000464, -0.05231]
+          fov_deg: {hfov_pinhole_deg: 63.7103, vfov_pinhole_deg: 38.5252, hfov_distortion_aware_deg: 72.2484, vfov_distortion_aware_deg: 40.1854, max_angle_from_axis_deg: 42.0166, undistort_max_residual_px: 0.0}
+          sensor2lidar:
+            R:
+            - [0.925688842, 0.024831753, -0.377469935]
+            - [0.378087258, -0.028405803, 0.925334067]
+            - [0.01225533, -0.999287994, -0.035683504]
+            t: [1.298831976, 0.670910965, 1.407883919]
+          optical_axis_in_lidar: {azimuth_deg: 112.1919, elevation_deg: -2.0449, roll_deg: 0.7022}
+          azimuth_left_edge_in_lidar_deg: 148.3856
+          azimuth_right_edge_in_lidar_deg: 76.1039
+        CAM_L2:
+          image_size_wh: [1920, 1080]
+          image_size_source: image_file
+          intrinsics: {fx: 1545.0, fy: 1545.0, cx: 960.0, cy: 560.0}
+          principal_point_offset_px: [0.0, 20.0]
+          K:
+          - [1545.0, 0.0, 960.0]
+          - [0.0, 1545.0, 560.0]
+          - [0.0, 0.0, 1.0]
+          distortion: [-0.356123, 0.172545, -0.00213, 0.000464, -0.05231]
+          fov_deg: {hfov_pinhole_deg: 63.7103, vfov_pinhole_deg: 38.5252, hfov_distortion_aware_deg: 72.2484, vfov_distortion_aware_deg: 40.1854, max_angle_from_axis_deg: 42.0166, undistort_max_residual_px: 0.0}
+          sensor2lidar:
+            R:
+            - [0.629994757, 0.016096862, -0.776432545]
+            - [0.77659704, -0.010600817, 0.629908454]
+            - [0.00190873, -0.99981424, -0.019179235]
+            t: [-0.48509994, 0.543390908, 1.386885067]
+          optical_axis_in_lidar: {azimuth_deg: 140.9481, elevation_deg: -1.099, roll_deg: 0.1094}
+          azimuth_left_edge_in_lidar_deg: 177.1233
+          azimuth_right_edge_in_lidar_deg: 104.8635
+        CAM_R0:
+          image_size_wh: [1920, 1080]
+          image_size_source: image_file
+          intrinsics: {fx: 1545.0, fy: 1545.0, cx: 960.0, cy: 560.0}
+          principal_point_offset_px: [0.0, 20.0]
+          K:
+          - [1545.0, 0.0, 960.0]
+          - [0.0, 1545.0, 560.0]
+          - [0.0, 0.0, 1.0]
+          distortion: [-0.356123, 0.172545, -0.00213, 0.000464, -0.05231]
+          fov_deg: {hfov_pinhole_deg: 63.7103, vfov_pinhole_deg: 38.5252, hfov_distortion_aware_deg: 72.2484, vfov_distortion_aware_deg: 40.1854, max_angle_from_axis_deg: 42.0166, undistort_max_residual_px: 0.0}
+          sensor2lidar:
+            R:
+            - [-0.82361747, 0.013165507, 0.566992885]
+            - [-0.567034423, 0.000689029, -0.823693807]
+            - [-0.011235021, -0.999913094, 0.006897799]
+            t: [1.626167684, -0.161517279, 1.526269118]
+          optical_axis_in_lidar: {azimuth_deg: -55.4583, elevation_deg: 0.3952, roll_deg: -0.6437}
+          azimuth_left_edge_in_lidar_deg: -19.2886
+          azimuth_right_edge_in_lidar_deg: -91.5344
+        CAM_R1:
+          image_size_wh: [1920, 1080]
+          image_size_source: image_file
+          intrinsics: {fx: 1545.0, fy: 1545.0, cx: 960.0, cy: 560.0}
+          principal_point_offset_px: [0.0, 20.0]
+          K:
+          - [1545.0, 0.0, 960.0]
+          - [0.0, 1545.0, 560.0]
+          - [0.0, 0.0, 1.0]
+          distortion: [-0.356123, 0.172545, -0.00213, 0.000464, -0.05231]
+          fov_deg: {hfov_pinhole_deg: 63.7103, vfov_pinhole_deg: 38.5252, hfov_distortion_aware_deg: 72.2484, vfov_distortion_aware_deg: 40.1854, max_angle_from_axis_deg: 42.0166, undistort_max_residual_px: 0.0}
+          sensor2lidar:
+            R:
+            - [-0.927436444, 0.007233861, -0.373910837]
+            - [0.373973199, 0.024315726, -0.9271207]
+            - [0.002385251, -0.999678157, -0.02525656]
+            t: [1.26366188, -0.634051183, 1.414302731]
+          optical_axis_in_lidar: {azimuth_deg: -111.9644, elevation_deg: -1.4472, roll_deg: 0.1367}
+          azimuth_left_edge_in_lidar_deg: -75.7848
+          azimuth_right_edge_in_lidar_deg: -148.0524
+        CAM_R2:
+          image_size_wh: [1920, 1080]
+          image_size_source: image_file
+          intrinsics: {fx: 1545.0, fy: 1545.0, cx: 960.0, cy: 560.0}
+          principal_point_offset_px: [0.0, 20.0]
+          K:
+          - [1545.0, 0.0, 960.0]
+          - [0.0, 1545.0, 560.0]
+          - [0.0, 0.0, 1.0]
+          distortion: [-0.356123, 0.172545, -0.00213, 0.000464, -0.05231]
+          fov_deg: {hfov_pinhole_deg: 63.7103, vfov_pinhole_deg: 38.5252, hfov_distortion_aware_deg: 72.2484, vfov_distortion_aware_deg: 40.1854, max_angle_from_axis_deg: 42.0166, undistort_max_residual_px: 0.0}
+          sensor2lidar:
+            R:
+            - [-0.624857943, 0.022149282, -0.780424218]
+            - [0.780592118, -0.001629807, -0.62503863]
+            - [-0.015116098, -0.999753346, -0.016271157]
+            t: [-0.497623197, -0.504670121, 1.391058131]
+          optical_axis_in_lidar: {azimuth_deg: -141.3089, elevation_deg: -0.9323, roll_deg: -0.8661}
+          azimuth_left_edge_in_lidar_deg: -105.1431
+          azimuth_right_edge_in_lidar_deg: -177.3936
+        CAM_B0:
+          image_size_wh: [1920, 1080]
+          image_size_source: image_file
+          intrinsics: {fx: 1545.0, fy: 1545.0, cx: 960.0, cy: 560.0}
+          principal_point_offset_px: [0.0, 20.0]
+          K:
+          - [1545.0, 0.0, 960.0]
+          - [0.0, 1545.0, 560.0]
+          - [0.0, 0.0, 1.0]
+          distortion: [-0.356123, 0.172545, -0.00213, 0.000464, -0.05231]
+          fov_deg: {hfov_pinhole_deg: 63.7103, vfov_pinhole_deg: 38.5252, hfov_distortion_aware_deg: 72.2484, vfov_distortion_aware_deg: 40.1854, max_angle_from_axis_deg: 42.0166, undistort_max_residual_px: 0.0}
+          sensor2lidar:
+            R:
+            - [0.004899158, 0.00335064, -0.999982386]
+            - [0.99996236, -0.007177254, 0.004875011]
+            - [-0.007160793, -0.99996863, -0.003385677]
+            t: [-0.486640937, -0.0005955, 1.486321097]
+          optical_axis_in_lidar: {azimuth_deg: 179.7207, elevation_deg: -0.194, roll_deg: -0.4103}
+          azimuth_left_edge_in_lidar_deg: -144.111
+          azimuth_right_edge_in_lidar_deg: 143.6415
+    lidar_merged:
+      num_frames_sampled: 20
+      sampled_files: [2021.05.25.14.16.10_veh-35_00083_00485/MergedPointCloud/95c09c7857035d5e.pcd, 2021.05.25.14.16.10_veh-35_01100_01664/MergedPointCloud/7ebe8c0f3186567a.pcd, 2021.05.25.14.16.10_veh-35_01690_02183/MergedPointCloud/d1c7b5d9cdd45ffb.pcd,
+        2021.05.25.14.16.10_veh-35_02482_02649/MergedPointCloud/764d9fba69445546.pcd, 2021.05.25.14.16.10_veh-35_03373_03550/MergedPointCloud/1c709f13be085030.pcd, 2021.05.25.14.16.10_veh-35_04097_04328/MergedPointCloud/94714fd00c0655c6.pcd,
+        2021.05.25.17.54.41_veh-35_01654_01850/MergedPointCloud/3ffae7b70b65509d.pcd, 2021.05.25.17.54.41_veh-35_01905_02121/MergedPointCloud/01fc0916b1725b00.pcd, 2021.05.25.17.54.41_veh-35_02723_02902/MergedPointCloud/46496f3ebb905939.pcd,
+        2021.05.25.17.54.41_veh-35_04111_04288/MergedPointCloud/4b24c1d5912152e2.pcd, 2021.05.25.17.54.41_veh-35_04967_05098/MergedPointCloud/c2be81ec9c345118.pcd, 2021.06.03.12.02.06_veh-35_00233_00609/MergedPointCloud/2a20ceac813b5ed5.pcd,
+        2021.06.03.12.02.06_veh-35_01100_01227/MergedPointCloud/8a9b595aad885bf0.pcd, 2021.06.03.12.02.06_veh-35_03526_03712/MergedPointCloud/cdcc951596c15e4c.pcd, 2021.06.03.13.55.17_veh-35_00073_00426/MergedPointCloud/d4771e36ea665818.pcd,
+        2021.06.03.13.55.17_veh-35_00789_00999/MergedPointCloud/f4685d9f6fef56a5.pcd, 2021.06.03.13.55.17_veh-35_02419_02561/MergedPointCloud/61531b7c63df5b1d.pcd, 2021.06.03.13.55.17_veh-35_02572_02855/MergedPointCloud/81f4b439fc8b54b4.pcd,
+        2021.06.03.13.55.17_veh-35_02866_03582/MergedPointCloud/4ce0ee4381de565f.pcd, 2021.06.03.17.06.58_veh-35_00712_00855/MergedPointCloud/244fb001a2ba5ada.pcd]
+      points_per_frame: {min: 88997.0, median: 93536.5, max: 97461.0}
+      intensity_range: [0.0, 254.0]
+      ground_z_estimate_m: -0.325
+      ground_z_estimate_spread_m: [-0.375, -0.275]
+      closest_ground_return_from_ego_origin_m: 1.4579
+      per_lidar_id:
+        '0':
+          present_in_frames: 20
+          points_per_frame: {min: 27754.0, median: 29773.0, max: 31757.0}
+          rings: {max_per_frame: 40, distinct_ring_ids_overall: 40}
+          xy_range_m: {p50: 16.982654571533203, p90: 57.92861785888674, p99: 140.4745417785645, max: 220.8538360595703}
+          z_m: {min: -6.665850639343262, p0.1: -2.1733749537467957, p99.9: 17.93835343360905, max: 26.7457275390625}
+          elevation_from_ego_origin_deg: {min: -8.060912132263184, p0.5: -3.1403826117515563, p99.5: 20.064731712341334, max: 24.631338119506836}
+          azimuth_coverage:
+            covered_deg: 360
+            empty_arcs_deg: []
+            occupancy_threshold_points: 86.725
+        '1':
+          present_in_frames: 20
+          points_per_frame: {min: 22198.0, median: 23630.0, max: 24495.0}
+          rings: {max_per_frame: 40, distinct_ring_ids_overall: 40}
+          xy_range_m: {p50: 14.016124248504639, p90: 57.208957672119176, p99: 144.72242080688494, max: 221.11300659179688}
+          z_m: {min: -5.523126125335693, p0.1: -1.8249816735982893, p99.9: 11.992980188369804, max: 16.11351203918457}
+          elevation_from_ego_origin_deg: {min: -8.4196138381958, p0.5: -2.8334281778335573, p99.5: 9.921494998931886, max: 12.87070369720459}
+          azimuth_coverage:
+            covered_deg: 266
+            empty_arcs_deg:
+            - [179.0, -87.0]
+            occupancy_threshold_points: 91.2
+        '2':
+          present_in_frames: 20
+          points_per_frame: {min: 21984.0, median: 23514.5, max: 24283.0}
+          rings: {max_per_frame: 40, distinct_ring_ids_overall: 40}
+          xy_range_m: {p50: 10.935216426849365, p90: 46.38524780273438, p99: 131.9535256958008, max: 219.7841796875}
+          z_m: {min: -3.6441869735717773, p0.1: -1.663979319214821, p99.9: 11.319948798179746, max: 16.080364227294922}
+          elevation_from_ego_origin_deg: {min: -5.3572516441345215, p0.5: -2.416934058666229, p99.5: 10.019681282043457, max: 13.091526985168457}
+          azimuth_coverage:
+            covered_deg: 272
+            empty_arcs_deg:
+            - [92.0, -180.0]
+            occupancy_threshold_points: 79.3
+        '3':
+          present_in_frames: 20
+          points_per_frame: {min: 7758.0, median: 7931.5, max: 8729.0}
+          rings: {max_per_frame: 20, distinct_ring_ids_overall: 20}
+          xy_range_m: {p50: 7.944438219070435, p90: 36.93674850463867, p99: 121.2635658264162, max: 222.09312438964844}
+          z_m: {min: -5.292590141296387, p0.1: -2.1908820343017577, p99.9: 7.441969845295021, max: 12.244316101074219}
+          elevation_from_ego_origin_deg: {min: -3.544340133666992, p0.5: -3.1223099327087405, p99.5: 5.443823404312134, max: 6.720638751983643}
+          azimuth_coverage:
+            covered_deg: 159
+            empty_arcs_deg:
+            - [-104.0, 97.0]
+            occupancy_threshold_points: 53.525
+        '4':
+          present_in_frames: 20
+          points_per_frame: {min: 8551.0, median: 8839.5, max: 8943.0}
+          rings: {max_per_frame: 20, distinct_ring_ids_overall: 20}
+          xy_range_m: {p50: 9.512166976928711, p90: 25.331168365478522, p99: 78.91511718749992, max: 220.72666931152344}
+          z_m: {min: -4.223038673400879, p0.1: -2.0394852657318117, p99.9: 1.1284229011536395, max: 3.8294973373413086}
+          elevation_from_ego_origin_deg: {min: -3.1861605644226074, p0.5: -2.3715273785591124, p99.5: 1.80387528181076, max: 2.290221929550171}
+          azimuth_coverage:
+            covered_deg: 163
+            empty_arcs_deg:
+            - [84.0, -79.0]
+            occupancy_threshold_points: 46.575
