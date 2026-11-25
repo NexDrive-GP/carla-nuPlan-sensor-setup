@@ -1,7 +1,7 @@
 ground_z_m: -0.32500000000001306
 num_frames: 20
 top_lidar_id: '0'
-roles: {'0': top_center, '1': a_pillar_left, '2': a_pillar_right, '4': front_bumper, '3': rear_bumper}
+roles: {'4': unreliable_fit, '0': top_center, '1': a_pillar_left, '2': a_pillar_right, '3': bumper_unknown}
 total_points_per_frame_mean: 93067.9
 lidars:
   '0':
@@ -14,7 +14,18 @@ lidars:
     elevation_max_deg: 15.025
     azimuth: {hfov_deg: 360.0, center_deg_ego: 0.0}
     points_per_frame_mean: 29643.8
-    quality: {cone_residual_m: 0.0531, ring_elevation_mad_deg: 0.1732, z_profile_ratio: 1.46, height_well_determined: true, tilt_amplitude_deg: 0.206, level_assumption_ok: true}
+    quality:
+      cone_residual_m: 0.0531
+      ring_elevation_mad_deg: 0.1732
+      z_profile_ratio: 1.46
+      x_profile_ratio: 1.13
+      y_profile_ratio: 1.17
+      height_well_determined: true
+      xy_well_determined: false
+      search_bound_hit: []
+      fit_ok: true
+      tilt_amplitude_deg: 0.206
+      level_assumption_ok: true
     paper_check:
       closest_paper_model: Pandar40P (top / A-pillar)
       paper_fov_deg: [-25.0, 15.0]
@@ -35,7 +46,18 @@ lidars:
     elevation_max_deg: 6.516
     azimuth: {hfov_deg: 278.0, center_deg_ego: 40.0}
     points_per_frame_mean: 23336.9
-    quality: {cone_residual_m: 0.0667, ring_elevation_mad_deg: 0.247, z_profile_ratio: 1.37, height_well_determined: true, tilt_amplitude_deg: 0.212, level_assumption_ok: true}
+    quality:
+      cone_residual_m: 0.0667
+      ring_elevation_mad_deg: 0.247
+      z_profile_ratio: 1.37
+      x_profile_ratio: 1.1
+      y_profile_ratio: 1.07
+      height_well_determined: true
+      xy_well_determined: false
+      search_bound_hit: []
+      fit_ok: true
+      tilt_amplitude_deg: 0.212
+      level_assumption_ok: true
     paper_check:
       closest_paper_model: Pandar40P (top / A-pillar)
       paper_fov_deg: [-25.0, 15.0]
@@ -56,7 +78,18 @@ lidars:
     elevation_max_deg: 6.147
     azimuth: {hfov_deg: 274.0, center_deg_ego: -43.0}
     points_per_frame_mean: 23327.8
-    quality: {cone_residual_m: 0.0244, ring_elevation_mad_deg: 0.1753, z_profile_ratio: 2.8, height_well_determined: true, tilt_amplitude_deg: 0.175, level_assumption_ok: true}
+    quality:
+      cone_residual_m: 0.0244
+      ring_elevation_mad_deg: 0.1753
+      z_profile_ratio: 2.8
+      x_profile_ratio: 1.47
+      y_profile_ratio: 1.28
+      height_well_determined: true
+      xy_well_determined: true
+      search_bound_hit: []
+      fit_ok: true
+      tilt_amplitude_deg: 0.175
+      level_assumption_ok: true
     paper_check:
       closest_paper_model: Pandar40P (top / A-pillar)
       paper_fov_deg: [-25.0, 15.0]
@@ -76,7 +109,18 @@ lidars:
     elevation_max_deg: 2.151
     azimuth: {hfov_deg: 161.0, center_deg_ego: 177.5}
     points_per_frame_mean: 7983.0
-    quality: {cone_residual_m: 0.0335, ring_elevation_mad_deg: 0.2079, z_profile_ratio: 2.07, height_well_determined: true, tilt_amplitude_deg: 0.065, level_assumption_ok: true}
+    quality:
+      cone_residual_m: 0.0335
+      ring_elevation_mad_deg: 0.2079
+      z_profile_ratio: 2.07
+      x_profile_ratio: 1.07
+      y_profile_ratio: 1.16
+      height_well_determined: true
+      xy_well_determined: false
+      search_bound_hit: []
+      fit_ok: true
+      tilt_amplitude_deg: 0.065
+      level_assumption_ok: true
     paper_check:
       closest_paper_model: Pandar20PB (rear bumper)
       paper_fov_deg: [-19.0, 3.0]
@@ -86,7 +130,7 @@ lidars:
       consistent_with_paper: true
       upper_edge_under_observed: false
     height_above_ground_m: 1.005
-    role: rear_bumper
+    role: bumper_unknown
   '4':
     mount_xyz_ego_m: [0.633, -2.0, 0.162]
     n_rings: 20
@@ -96,7 +140,18 @@ lidars:
     elevation_max_deg: 0.188
     azimuth: {hfov_deg: 164.0, center_deg_ego: 2.0}
     points_per_frame_mean: 8776.4
-    quality: {cone_residual_m: 0.0402, ring_elevation_mad_deg: 0.2074, z_profile_ratio: 1.57, height_well_determined: true, tilt_amplitude_deg: 0.264, level_assumption_ok: true}
+    quality:
+      cone_residual_m: 0.0402
+      ring_elevation_mad_deg: 0.2074
+      z_profile_ratio: 1.57
+      x_profile_ratio: 1.0
+      y_profile_ratio: 1.01
+      height_well_determined: true
+      xy_well_determined: false
+      search_bound_hit: [y]
+      fit_ok: false
+      tilt_amplitude_deg: 0.264
+      level_assumption_ok: true
     paper_check:
       closest_paper_model: Pandar20PB (rear bumper)
       paper_fov_deg: [-19.0, 3.0]
@@ -106,5 +161,5 @@ lidars:
       consistent_with_paper: false
       upper_edge_under_observed: false
     height_above_ground_m: 0.487
-    role: front_bumper
+    role: unreliable_fit
 vehicle: veh-35

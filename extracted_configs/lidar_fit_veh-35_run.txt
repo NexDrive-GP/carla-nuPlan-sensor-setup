@@ -1,7 +1,7 @@
 ground z = -0.32500000000001306   top lidar id = 0   total pts/frame = 93067.9
-lidar 0 [top_center]: mount [1.398, -0.211, 1.656]  rings 40  elev -16.6..15.0  az 360deg@0.0  cone 0.0531 m  height_ok=True  tilt=0.206deg level_ok=True  paper_ok=False
-lidar 1 [a_pillar_left]: mount [2.609, 0.656, 1.017]  rings 40  elev -23.0..6.5  az 278deg@40.0  cone 0.0667 m  height_ok=True  tilt=0.212deg level_ok=True  paper_ok=True
-lidar 2 [a_pillar_right]: mount [2.531, -0.727, 1.111]  rings 40  elev -24.2..6.1  az 274deg@-43.0  cone 0.0244 m  height_ok=True  tilt=0.175deg level_ok=True  paper_ok=True
-lidar 3 [rear_bumper]: mount [-0.539, -0.516, 0.68]  rings 20  elev -17.4..2.2  az 161deg@177.5  cone 0.0335 m  height_ok=True  tilt=0.065deg level_ok=True  paper_ok=True
-lidar 4 [front_bumper]: mount [0.633, -2.0, 0.162]  rings 20  elev -6.6..0.2  az 164deg@2.0  cone 0.0402 m  height_ok=True  tilt=0.264deg level_ok=True  paper_ok=False
+lidar 0 [top_center]: mount [1.398, -0.211, 1.656]  rings 40  elev -16.6..15.0  az 360deg@0.0  cone 0.0531 m  ratios x/y/z=1.13/1.17/1.46  fit_ok=True  tilt=0.206deg level_ok=True  paper_ok=False
+lidar 1 [a_pillar_left]: mount [2.609, 0.656, 1.017]  rings 40  elev -23.0..6.5  az 278deg@40.0  cone 0.0667 m  ratios x/y/z=1.1/1.07/1.37  fit_ok=True  tilt=0.212deg level_ok=True  paper_ok=True
+lidar 2 [a_pillar_right]: mount [2.531, -0.727, 1.111]  rings 40  elev -24.2..6.1  az 274deg@-43.0  cone 0.0244 m  ratios x/y/z=1.47/1.28/2.8  fit_ok=True  tilt=0.175deg level_ok=True  paper_ok=True
+lidar 3 [bumper_unknown]: mount [-0.539, -0.516, 0.68]  rings 20  elev -17.4..2.2  az 161deg@177.5  cone 0.0335 m  ratios x/y/z=1.07/1.16/2.07  fit_ok=True  tilt=0.065deg level_ok=True  paper_ok=True
+lidar 4 [unreliable_fit]: mount [0.633, -2.0, 0.162]  rings 20  elev -6.6..0.2  az 164deg@2.0  cone 0.0402 m  ratios x/y/z=1.0/1.01/1.57  fit_ok=False BOUND:y  tilt=0.264deg level_ok=True  paper_ok=False
 wrote extracted_configs/lidar_fit_veh-35.yaml
