@@ -221,7 +221,8 @@ def pick_top_lidar(fit):
     if tid is not None and str(tid) in L:
         return str(tid), L[str(tid)]
     cand = [(v["mount_xyz_ego_m"][2], k, v) for k, v in L.items()
-            if v.get("n_rings", 0) >= 30 and abs(v["mount_xyz_ego_m"][1]) < 0.5]
+            if v.get("n_rings", 0) >= 30 and abs(v["mount_xyz_ego_m"][1]) < 0.5
+            and v.get("quality", {}).get("fit_ok", True)]
     if not cand:
         return None, None
     _, k, v = max(cand, key=lambda c: c[0])
@@ -261,14 +262,25 @@ def convert_lidar_merged(args, ctx, fit, lm):
         if top is not None:
             pos, src = top["mount_xyz_ego_m"], f"fitted top LiDAR (lidar_id {top_id})"
             q = top.get("quality", {})
+            if q.get("fit_ok") is False:
+                ctx.notes.append(f"[CHECK] the top LiDAR fit hit the search box ({q.get('search_bound_hit')}): position unusable.")
+            if q.get("xy_well_determined") is False:
+                ctx.notes.append(f"[CHECK] top LiDAR x/y poorly determined (x/y profile ratio "
+                                 f"{q.get('x_profile_ratio')}/{q.get('y_profile_ratio')}): verify x, y by hand or use --lidar-mount.")
+            ctx.notes.append(f"top LiDAR fit precision on real data is roughly 0.1-0.2 m (left/right A-pillar units differ by "
+                             "several cm in a symmetric rig); the roof unit sits on the vehicle centreline, "
+                             f"fitted y = {top['mount_xyz_ego_m'][1]:+.3f} m: compare with the camera rig's centreline and "
+                             "override with --lidar-mount X 0 Z if they disagree.")
             if q.get("height_well_determined") is False:
                 ctx.notes.append("[CHECK] the fit says the top LiDAR height is NOT well determined "
                                  "(z_profile_ratio <= 2): verify the z of LIDAR_MERGED by hand.")
             pc = top.get("paper_check", {})
             if pc.get("consistent_with_paper") is False:
                 ctx.notes.append(f"[CHECK] fitted elevation range {top.get('elevation_min_deg')}.."
-                                 f"{top.get('elevation_max_deg')} deg is not consistent with the paper "
-                                 f"({pc.get('paper_fov_deg')}): the fit or the lidar_id selection may be wrong.")
+                                 f"{top.get('elevation_max_deg')} deg vs paper {pc.get('paper_fov_deg')} (lower edge off by "
+                                 f"{pc.get('lower_edge_error_deg')} deg, upper by {pc.get('upper_edge_error_deg')}): the apex fit may be "
+                                 "biased, or the lowest beams are blocked/cropped by the car body. The CARLA sensor uses the "
+                                 "paper FOV regardless.")
             if q.get("level_assumption_ok") is False:
                 ctx.notes.append(f"[CHECK] top LiDAR looks tilted ({q.get('tilt_amplitude_deg')} deg): the fit assumed a "
                                  "level sensor, apex/elevations may be biased.")

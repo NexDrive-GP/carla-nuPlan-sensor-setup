@@ -47,6 +47,8 @@ PAPER_MODELS = [
 CH_TOL = 2          # observed rings may exceed the datasheet channel count by at most this many
 CH_MISSING = 8      # ... and may fall short by this many (upper rings often return nothing: sky)
 BIG_RINGS = 30      # >= this many rings = a 40-channel unit (top / A-pillar), else a 20-channel bumper unit
+ROLE_MODEL = {"top_center": 0, "a_pillar_left": 0, "a_pillar_right": 0, "front_bumper": 1, "rear_bumper": 2}
+BOUND_TOL = 0.02    # m: a coordinate this close to the search box edge means the optimiser ran away
 TILT_OK_DEG = 0.5   # first-harmonic elevation amplitude below which the level-sensor assumption is accepted
 Z_RATIO_OK = 1.2    # cost at (z +-15 cm) / cost at the optimum. 1.0 = height unconstrained (ground-only scene);
                     # the cost is a metric residual with a noise floor, so values are small (calibrated on synthetic data)
@@ -157,12 +159,14 @@ def tilt_amplitude(c, x, y, z, ring):
     return float(np.hypot(coef[0], coef[1]))
 
 
-def paper_check(n_rings, lo, up):
+def paper_check(n_rings, lo, up, only=None):
     """Compare the fitted ring range with the datasheet. The LOWER edge must match (ground returns always see it);
     the UPPER edge may be under-observed (rings above the horizon only return from tall objects), so it is only
     required not to exceed the datasheet value."""
     best = None
-    for name, plo, pup, ch in PAPER_MODELS:
+    for mi, (name, plo, pup, ch) in enumerate(PAPER_MODELS):
+        if only is not None and mi != only:
+            continue
         if not (-CH_MISSING <= n_rings - ch <= CH_TOL):
             continue
         err = max(abs(lo - plo), abs(up - pup))
@@ -211,6 +215,12 @@ def fit_lidar(x, y, z, ring, n_frames, ground_z=None, seed=0):
     up = _cost(c + [0, 0, 0.15], *fine)
     dn = _cost(c - [0, 0, 0.15], *fine)
     ratio = (up + dn) / 2.0 / max(f, 1e-6)
+    axis_ratio = {"z": ratio}
+    for dim, name in ((0, "x"), (1, "y")):          # same test along x and y (+-30 cm): bumper units see a half-space
+        e = np.zeros(3)                              # and trade apex position along the view axis against height
+        e[dim] = 0.30
+        axis_ratio[name] = (_cost(c + e, *fine) + _cost(c - e, *fine)) / 2.0 / max(f, 1e-6)
+    at_bound = [n for n, i in (("x", 0), ("y", 1), ("z", 2)) if min(c[i] - lo[i], hi[i] - c[i]) < BOUND_TOL]
 
     el = _elev(c, x, y, z)
     rings = []
@@ -238,7 +248,12 @@ def fit_lidar(x, y, z, ring, n_frames, ground_z=None, seed=0):
             "cone_residual_m": round(f, 4),
             "ring_elevation_mad_deg": round(float(np.mean([mad for _, _, mad in rings])), 4),
             "z_profile_ratio": round(float(ratio), 2),
+            "x_profile_ratio": round(float(axis_ratio["x"]), 2),
+            "y_profile_ratio": round(float(axis_ratio["y"]), 2),
             "height_well_determined": bool(ratio > Z_RATIO_OK),
+            "xy_well_determined": bool(axis_ratio["x"] > Z_RATIO_OK and axis_ratio["y"] > Z_RATIO_OK),
+            "search_bound_hit": at_bound,
+            "fit_ok": bool(not at_bound),
             "tilt_amplitude_deg": None if not np.isfinite(tilt) else round(tilt, 3),
             "level_assumption_ok": bool(np.isfinite(tilt) and tilt < TILT_OK_DEG),
         },
@@ -260,8 +275,12 @@ def ground_z_estimate(x, y, z):
 def assign_roles(lidars):
     """lidar_id -> role from the FITTED positions. -> (roles dict, top_lidar_id or None)."""
     roles, top = {}, None
-    big = {k: v for k, v in lidars.items() if v["n_rings"] >= BIG_RINGS}
-    small = {k: v for k, v in lidars.items() if v["n_rings"] < BIG_RINGS}
+    good = {k: v for k, v in lidars.items() if v["quality"]["fit_ok"]}
+    for k in lidars:
+        if k not in good:
+            roles[k] = "unreliable_fit"          # apex hit the search box: position is meaningless
+    big = {k: v for k, v in good.items() if v["n_rings"] >= BIG_RINGS}
+    small = {k: v for k, v in good.items() if v["n_rings"] < BIG_RINGS}
     centre = [k for k, v in big.items() if abs(v["mount_xyz_ego_m"][1]) < 0.5]
     if centre:
         top = max(centre, key=lambda k: big[k]["mount_xyz_ego_m"][2])
@@ -297,6 +316,10 @@ def fit_rig(per_lidar, n_frames):
     roles, top = assign_roles(out)
     for k, role in roles.items():
         out[k]["role"] = role
+        if role in ROLE_MODEL:
+            r = out[k]
+            r["paper_check"] = paper_check(r["n_rings"], r["elevation_min_deg"], r["elevation_max_deg"],
+                                           only=ROLE_MODEL[role])
     return {"ground_z_m": gz, "num_frames": n_frames,
             "top_lidar_id": top, "roles": roles,
             "total_points_per_frame_mean": round(sum(v["points_per_frame_mean"] for v in out.values()), 1),
@@ -366,7 +389,8 @@ def main():
         print(f"lidar {k} [{r.get('role', '?')}]: mount {r['mount_xyz_ego_m']}  rings {r['n_rings']}  "
               f"elev {r['elevation_min_deg']:.1f}..{r['elevation_max_deg']:.1f}  "
               f"az {r['azimuth']['hfov_deg']:.0f}deg@{r['azimuth']['center_deg_ego']}  "
-              f"cone {q['cone_residual_m']} m  height_ok={q['height_well_determined']}  "
+              f"cone {q['cone_residual_m']} m  ratios x/y/z={q['x_profile_ratio']}/{q['y_profile_ratio']}/{q['z_profile_ratio']}  "
+              f"fit_ok={q['fit_ok']}{' BOUND:' + ','.join(q['search_bound_hit']) if q['search_bound_hit'] else ''}  "
               f"tilt={q['tilt_amplitude_deg']}deg level_ok={q['level_assumption_ok']}  "
               f"paper_ok={r['paper_check'].get('consistent_with_paper')}")
     print(f"wrote {a.out}")
