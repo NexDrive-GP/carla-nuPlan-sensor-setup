@@ -77,11 +77,11 @@ sensors:
     sensor_tick: 0.1
 - id: LIDAR_MERGED
   type: sensor.lidar.ray_cast
-  transform: {x: -0.063, y: 0.211, z: 1.981, roll: 0.0, pitch: 0.0, yaw: 0.0}
+  transform: {x: -0.063, y: 0.0, z: 1.981, roll: 0.0, pitch: 0.0, yaw: 0.0}
   attributes:
     channels: 40
     range: 100.0
-    points_per_second: 1000000
+    points_per_second: 1860000
     rotation_frequency: 20.0
     upper_fov: 15.0
     lower_fov: -25.0
@@ -93,12 +93,10 @@ sensors:
     noise_stddev: 0.0
     sensor_tick: 0.0
 notes:
-- '[CHECK] fitted elevation range -16.553..15.025 deg is not consistent with the paper ([-25.0, 15.0]): the fit or the lidar_id selection may
-  be wrong.'
-- LIDAR_MERGED points_per_second capped 1,861,358 -> 1,000,000 (--lidar-pps-cap) to keep the ray-casting cheap.
-- 'LIDAR_MERGED: the 5 physical LiDARs are represented by ONE ray_cast sensor at the fitted top LiDAR (lidar_id 0); 40 ch, [-25, +15] deg, 360
-  deg (paper Table VII top Pandar40P); points_per_second from fit (sum of 5 LiDARs, measured). Bumper and A-pillar viewpoints / near-field blind
-  spots are NOT modelled; CARLA spaces channels uniformly (real Pandar40P: denser near the horizon); rays with no hit are dropped.'
+- LIDAR_MERGED points_per_second capped 1,861,358 -> 1,860,000 (--lidar-pps-cap) to keep the ray-casting cheap.
+- 'LIDAR_MERGED: the 5 physical LiDARs are represented by ONE ray_cast sensor at the --lidar-mount; 40 ch, [-25, +15] deg, 360 deg (paper Table
+  VII top Pandar40P); points_per_second from fit (sum of 5 LiDARs, measured). Bumper and A-pillar viewpoints / near-field blind spots are NOT
+  modelled; CARLA spaces channels uniformly (real Pandar40P: denser near the horizon); rays with no hit are dropped.'
 - 'principal point is not at the image centre (CARLA cannot model that, ignored; --compensate-principal-point approximates it by a rotation):
   CAM_F0 (+0,+20) px, CAM_L0 (+0,+20) px, CAM_L1 (+0,+20) px, CAM_L2 (+0,+20) px, CAM_R0 (+0,+20) px, CAM_R1 (+0,+20) px, CAM_R2 (+0,+20) px,
   CAM_B0 (+0,+20) px'
